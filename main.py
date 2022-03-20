@@ -14,8 +14,10 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 
-search = "/html/body//div[@role='main']/table[@class='main-table']//form[@role='search']//button[@role='button']"
+elem_search_xpath = "/html/body//div[@role='main']/table[@class='main-table']//form[@role='search']//button[@role='button']"
 timeout = 2
+website = "google.com/"
+elem_present_xpath = "//div[@aria-label='Yandex']"
 
 
 class DefectCheck:
@@ -40,22 +42,26 @@ class DefectCheck:
         chrome_options.add_argument("--profile-directory=Default")
         self.driver = webdriver.Chrome(service=s, options=chrome_options)
         if setup:
-            self.driver.get("https://www.wykop.pl")
+            self.driver.get("https://www.webpage.com")
             time.sleep(30)
 
     def loadExcel(self, file):
-        load = pd.read_excel(f"{file}", 'Arkusz3')
-        linklist = load["Link"].to_list()
-        linklist = list(dict.fromkeys(linklist))
+        load = pd.read_excel(f"{file}", 'Test run')
+        prepared = load.drop(load.index[:8]) # drop 8 rows, including "title row"
+        linklist = prepared["Unnamed: 5"].to_list()
+        linklist = [x for x in linklist if str(x) != 'nan']  # remove empty values
+        linklist = list(dict.fromkeys(linklist))  # remove duplicates
+        for i, x in enumerate(linklist):  # create defect links from defect title
+            linklist[i] = f"{website}{x.split(' ', 1)[0]}"
         return linklist
 
     def checkClosed(self, link_list, new_list=[]):
         for i in link_list:
             self.driver.get(f'https://{i}')
             try:
-                element_present = EC.presence_of_element_located((By.XPATH, "//div[@aria-label='Yandex']"))
+                element_present = EC.presence_of_element_located((By.XPATH, f"{elem_present_xpath}"))
                 WebDriverWait(self.driver, timeout).until(element_present)
-                self.driver.find_element(By.XPATH, search)
+                self.driver.find_element(By.XPATH, elem_search_xpath)
                 new_list.append(i)
             except NoSuchElementException:
                 print(f"ERROR : No element found on {i}")
@@ -111,6 +117,7 @@ check = DefectCheck()
 file, setup = check.getOpt(sys.argv[1:])
 if setup:
     check.set_up()
+    check.teardown()
 else:
     check.run(file)
 
