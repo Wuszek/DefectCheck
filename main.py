@@ -1,6 +1,5 @@
 import argparse
 import getpass
-import json
 import os.path
 import sys
 import time
@@ -14,18 +13,13 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 
-elem_search_xpath = "/html/body//div[@role='main']/table[@class='main-table']//form[@role='search']//button[@role='button']"
-timeout = 2
-website = "google.com/"
-elem_present_xpath = "//div[@aria-label='Yandex']"
+elem_search_xpath = "element_to_search"
+timeout = 5
+website = "website.com/browse/"
+elem_present_xpath = "element_to_be_present"
 
 
 class DefectCheck:
-
-        # with open('cookies.txt', 'w') as cookief:
-        #     # save the cookies as json format
-        #     cookief.write(json.dumps(driver.get_cookies()))
-        # self.driver.close()
 
     def __init__(self):
         self.driver = None
@@ -34,19 +28,20 @@ class DefectCheck:
         chrome_options = Options()
         if not setup:
             chrome_options.add_argument("--headless")
-        if setup:
-            chrome_options.add_argument("--start-maximized")
         chrome_options.add_argument(
             f"--user-data-dir=C:\\Users\\{getpass.getuser()}\\AppData\\Local\\Google\\Chrome\\User Data\\Default")
         s = Service(ChromeDriverManager().install())
         chrome_options.add_argument("--profile-directory=Default")
         self.driver = webdriver.Chrome(service=s, options=chrome_options)
         if setup:
-            self.driver.get("https://www.webpage.com")
+            '''
+            Now yoy have 30 seconds to log in to that webpage, if your task requires being logged in. 
+            '''
+            self.driver.get("https://www.website.com")
             time.sleep(30)
 
-    def loadExcel(self, file):
-        load = pd.read_excel(f"{file}", 'Test run')
+    def loadExcel(self, file_xlsx):
+        load = pd.read_excel(f"{file_xlsx}", 'Test run')
         prepared = load.drop(load.index[:8]) # drop 8 rows, including "title row"
         linklist = prepared["Unnamed: 5"].to_list()
         linklist = [x for x in linklist if str(x) != 'nan']  # remove empty values
@@ -63,6 +58,7 @@ class DefectCheck:
                 WebDriverWait(self.driver, timeout).until(element_present)
                 self.driver.find_element(By.XPATH, elem_search_xpath)
                 new_list.append(i)
+                print(f"DEBUG : Issue {i} is closed!")
             except NoSuchElementException:
                 print(f"ERROR : No element found on {i}")
                 pass
@@ -73,8 +69,11 @@ class DefectCheck:
 
     def listClosed(self, closed_list):
         print(f"\nList of closed defects:\n------------------------------------------------------")
+        f = open('closed.txt', 'w')
         for i in closed_list:
-            print(str(i))
+            f.write(i+'\n')
+        print("DEBUG : Writing list of closed defects to file finished.")
+        f.close()
 
     def teardown(self):
         self.driver.close()
