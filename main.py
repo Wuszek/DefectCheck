@@ -11,12 +11,11 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
 
-elem_search_xpath = "element_to_search"
+elem_search_xpath = "elem_to_search_xpath"
 timeout = 5
-website = "website.com/browse/"
-elem_present_xpath = "element_to_be_present"
+website = "website.com"
+elem_present_xpath = "elem_to_be_present_xpath"
 
 
 class DefectCheck:
@@ -26,28 +25,27 @@ class DefectCheck:
 
     def set_up(self):
         chrome_options = Options()
-        if not setup:
-            chrome_options.add_argument("--headless")
+        # if not setup:
+        #     chrome_options.add_argument("--headless")
         chrome_options.add_argument(
             f"--user-data-dir=C:\\Users\\{getpass.getuser()}\\AppData\\Local\\Google\\Chrome\\User Data\\Default")
-        s = Service(ChromeDriverManager().install())
+        s = Service('chromedriver.exe')
         chrome_options.add_argument("--profile-directory=Default")
         self.driver = webdriver.Chrome(service=s, options=chrome_options)
         if setup:
-            '''
-            Now yoy have 30 seconds to log in to that webpage, if your task requires being logged in. 
-            '''
-            self.driver.get("https://www.website.com")
+            self.driver.get("https://website.com/")
             time.sleep(30)
 
-    def loadExcel(self, file_xlsx):
-        load = pd.read_excel(f"{file_xlsx}", 'Test run')
+    def loadExcel(self, file):
+        load = pd.read_excel(f"{file}", 'Test run')
         prepared = load.drop(load.index[:8]) # drop 8 rows, including "title row"
         linklist = prepared["Unnamed: 5"].to_list()
         linklist = [x for x in linklist if str(x) != 'nan']  # remove empty values
         linklist = list(dict.fromkeys(linklist))  # remove duplicates
         for i, x in enumerate(linklist):  # create defect links from defect title
             linklist[i] = f"{website}{x.split(' ', 1)[0]}"
+        print(f"-------------------------------------------------------")
+        print(f"Found {len(linklist)} unique defects. Working now \n")
         return linklist
 
     def checkClosed(self, link_list, new_list=[]):
@@ -58,21 +56,24 @@ class DefectCheck:
                 WebDriverWait(self.driver, timeout).until(element_present)
                 self.driver.find_element(By.XPATH, elem_search_xpath)
                 new_list.append(i)
-                print(f"DEBUG : Issue {i} is closed!")
+                print(f"{link_list.index(i)+1}/{len(link_list)} INFO \t: Defect https://{i} is closed!".expandtabs(5))
             except NoSuchElementException:
-                print(f"ERROR : No element found on {i}")
+                print(f"{link_list.index(i)+1}/{len(link_list)} ERROR \t: No element found "
+                      f"on https://{i}".expandtabs(5))
                 pass
             except TimeoutException:
-                print(f"ERROR : Timeout exceeded. Page {i} not loaded correctly.")
+                print(f"{link_list.index(i)+1}/{len(link_list)} ERROR \t: Timeout exceeded. "
+                      f"Page https://{i} not loaded correctly.".expandtabs(5))
                 pass
         return new_list
 
-    def listClosed(self, closed_list):
-        print(f"\nList of closed defects:\n------------------------------------------------------")
-        f = open('closed.txt', 'w')
+    def listClosed(self, closed_list, input_file):
+        print(f"-------------------------------------------------------")
+        f = open(f'{input_file[:-5]}.txt', 'w')
+        closed_list.sort()
         for i in closed_list:
-            f.write(i+'\n')
-        print("DEBUG : Writing list of closed defects to file finished.")
+            f.write(f'https://{i}' + '\n')
+        print(f"INFO \t: Writing list of closed defects to {input_file[:-5]}.txt finished.".expandtabs(5))
         f.close()
 
     def teardown(self):
@@ -96,7 +97,7 @@ class DefectCheck:
         helpful = parser.add_argument_group('helpful arguments')
 
         required.add_argument('-i', action='store', dest="file", required=True, metavar="<path>",
-                              help='Provide path to excel file generated from validationsraports', type=isfile_check)
+                              help='Provide path to excel file generated from website.com', type=isfile_check)
         helpful.add_argument('-s', action='store_true', dest="setup", help="Login to portal to store credentials",
                              default=False)
         helpful.add_argument('-h', action='help', help='show this help message and exit')
@@ -108,7 +109,7 @@ class DefectCheck:
         self.set_up()
         links = self.loadExcel(input_file)
         closed_list = self.checkClosed(links)
-        self.listClosed(closed_list)
+        self.listClosed(closed_list, input_file)
         self.teardown()
 
 
@@ -119,4 +120,3 @@ if setup:
     check.teardown()
 else:
     check.run(file)
-
