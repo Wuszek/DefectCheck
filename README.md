@@ -5,6 +5,13 @@
 It is designed to prepare list of closed defects, connected to automatic tests. This tool 
 should help track defects, that should be detached from tests code, to keep it clean.
 
+## Test run 
+I prepared fake `test.xlsx` file filled with desired defect information, and made script work with public Atlassian JIRA. To test script,
+just clone repo and run:
+```bash 
+python3 main.py -i test.xlsx
+```
+
 ## How does it work?
 ### Input:
 As input, we provide Excel file with results of automatic tests. Each row contains 

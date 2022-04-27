@@ -13,12 +13,12 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 
-ELEM_SEARCH_XPATH = "elem_to_search_xpath"
+ELEM_SEARCH_XPATH = "//span[@id='status-val']/span[.='Closed']"
 TIMEOUT = 5
-WEBSITE = "jira.com/browse"
-ELEM_PRESENT_XPATH = "elem_to_be_present_xpath"
-DEFECT_NAME_XPATH = "defect_name_xpath"
-TYPE_VALUE = "defect_type_value_xpath"
+WEBSITE = "jira.atlassian.com/browse/"
+ELEM_PRESENT_XPATH = "//span[@id='status-val']"
+DEFECT_NAME_XPATH = "//h1[@id='summary-val']"
+TYPE_VALUE = "//span[@id='type-val']"
 
 
 class DefectCheck:
@@ -28,21 +28,21 @@ class DefectCheck:
 
     def set_up(self):
         chrome_options = Options()
-        if not setup:
-            chrome_options.add_argument("--headless")
+        # if not setup:
+        #     chrome_options.add_argument("--headless")
         chrome_options.add_argument(
             f"--user-data-dir=C:\\Users\\{getpass.getuser()}\\AppData\\Local\\Google\\Chrome\\User Data\\Default")
         s = Service('chromedriver.exe')
         chrome_options.add_argument("--profile-directory=Default")
         self.driver = webdriver.Chrome(service=s, options=chrome_options)
         if setup:
-            self.driver.get("https://jira.com/")
+            self.driver.get("https://jira.atlassian.com/")
             time.sleep(30)
 
     def loadExcel(self, file):
-        load = pd.read_excel(f"{file}", 'Test run')
-        prepared = load.drop(load.index[:8])  # drop 8 rows, including "title row"
-        linklist = prepared["Unnamed: 5"].to_list()
+        load = pd.read_excel(f"{file}", 'Test run')  # open tab named "Test run"
+        prepared = load.drop(load.index[:8])  # drop 9 rows, including "title row"
+        linklist = prepared["Unnamed: 5"].to_list()  # take 6th collumn
         linklist = [x for x in linklist if str(x) != 'nan']  # remove empty values
         for i, x in enumerate(linklist):  # create defect links from defect title
             # linklist[i] = f"{website}{x.split(' ', 1)[0]}"
@@ -121,7 +121,6 @@ class DefectCheck:
         links = self.loadExcel(input_file)
         closed_list = self.checkClosed(links)
         self.listClosed(closed_list, input_file)
-        self.teardown()
 
 
 check = DefectCheck()
