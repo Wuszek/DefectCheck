@@ -98,7 +98,7 @@ class DefectCheck:
             return path
 
         parser = argparse.ArgumentParser \
-            (usage="python3 main.py [-h] -i <file_path>",
+            (usage="python3 main.py [-h -s] -i <file_path>",
              description="Description",
              epilog="© 2022, wiktor.kobiela", prog="DefectCheck",
              add_help=False,
