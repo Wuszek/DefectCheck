@@ -3,19 +3,22 @@ import getpass
 import os.path
 import sys
 import time
+
 import pandas as pd
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.wait import WebDriverWait
 
-elem_search_xpath = "elem_to_search_xpath"
-timeout = 5
-website = "website.com"
-elem_present_xpath = "elem_to_be_present_xpath"
+ELEM_SEARCH_XPATH = "elem_to_search_xpath"
+TIMEOUT = 5
+WEBSITE = "jira.com/browse"
+ELEM_PRESENT_XPATH = "elem_to_be_present_xpath"
+DEFECT_NAME_XPATH = "defect_name_xpath"
+TYPE_VALUE = "defect_type_value_xpath"
 
 
 class DefectCheck:
@@ -25,44 +28,51 @@ class DefectCheck:
 
     def set_up(self):
         chrome_options = Options()
-        # if not setup:
-        #     chrome_options.add_argument("--headless")
+        if not setup:
+            chrome_options.add_argument("--headless")
         chrome_options.add_argument(
             f"--user-data-dir=C:\\Users\\{getpass.getuser()}\\AppData\\Local\\Google\\Chrome\\User Data\\Default")
         s = Service('chromedriver.exe')
         chrome_options.add_argument("--profile-directory=Default")
         self.driver = webdriver.Chrome(service=s, options=chrome_options)
         if setup:
-            self.driver.get("https://website.com/")
+            self.driver.get("https://jira.com/")
             time.sleep(30)
 
     def loadExcel(self, file):
         load = pd.read_excel(f"{file}", 'Test run')
-        prepared = load.drop(load.index[:8]) # drop 8 rows, including "title row"
+        prepared = load.drop(load.index[:8])  # drop 8 rows, including "title row"
         linklist = prepared["Unnamed: 5"].to_list()
         linklist = [x for x in linklist if str(x) != 'nan']  # remove empty values
-        linklist = list(dict.fromkeys(linklist))  # remove duplicates
         for i, x in enumerate(linklist):  # create defect links from defect title
-            linklist[i] = f"{website}{x.split(' ', 1)[0]}"
+            # linklist[i] = f"{website}{x.split(' ', 1)[0]}"
+            linklist[i] = f"{WEBSITE}{x[:9]}"  # workaround, as titles are sometimes broken. Update when counter >100k
+        linklist = list(dict.fromkeys(linklist))  # remove duplicates
         print(f"-------------------------------------------------------")
-        print(f"Found {len(linklist)} unique defects. Working now \n")
+        print(f"INFO \t: Loaded file {file}. Found {len(linklist)} unique defects. Looking for CLOSED:".expandtabs(15))
+        print(f"-------------------------------------------------------")
         return linklist
 
     def checkClosed(self, link_list, new_list=[]):
         for i in link_list:
             self.driver.get(f'https://{i}')
             try:
-                element_present = EC.presence_of_element_located((By.XPATH, f"{elem_present_xpath}"))
-                WebDriverWait(self.driver, timeout).until(element_present)
-                self.driver.find_element(By.XPATH, elem_search_xpath)
-                new_list.append(i)
-                print(f"{link_list.index(i)+1}/{len(link_list)} INFO \t: Defect https://{i} is closed!".expandtabs(5))
+                element_present = EC.presence_of_element_located((By.XPATH, f"{ELEM_PRESENT_XPATH}"))
+                WebDriverWait(self.driver, TIMEOUT).until(element_present)
+                type_d = self.driver.find_element(By.XPATH, TYPE_VALUE).text  # look for type
+                self.driver.find_element(By.XPATH, ELEM_SEARCH_XPATH)  # look for status
+                title = self.driver.find_element(By.XPATH, DEFECT_NAME_XPATH).text  # grab title
+                closed_defect_info = f"{i} | Type: {type_d} | Title: {title}"
+                new_list.append(closed_defect_info)
+                print(f"{link_list.index(i) + 1}/{len(link_list)} INFO \t: {type_d} https://{i} "
+                      f"is CLOSED! TITLE: {title}".expandtabs(5))
             except NoSuchElementException:
-                print(f"{link_list.index(i)+1}/{len(link_list)} ERROR \t: No element found "
-                      f"on https://{i}".expandtabs(5))
+                defect_status = self.driver.find_element(By.XPATH, ELEM_PRESENT_XPATH).text
+                print(f"{link_list.index(i) + 1}/{len(link_list)} ERROR \t: {type_d} https://{i} "
+                      f"is {defect_status}".expandtabs(5))
                 pass
             except TimeoutException:
-                print(f"{link_list.index(i)+1}/{len(link_list)} ERROR \t: Timeout exceeded. "
+                print(f"{link_list.index(i) + 1}/{len(link_list)} ERROR \t: Timeout exceeded. "
                       f"Page https://{i} not loaded correctly.".expandtabs(5))
                 pass
         return new_list
@@ -73,8 +83,9 @@ class DefectCheck:
         closed_list.sort()
         for i in closed_list:
             f.write(f'https://{i}' + '\n')
-        print(f"INFO \t: Writing list of closed defects to {input_file[:-5]}.txt finished.".expandtabs(5))
         f.close()
+        print(f"INFO \t: Writing list of closed defects to {input_file[:-5]}.txt finished.".expandtabs(15))
+        print(f"-------------------------------------------------------")
 
     def teardown(self):
         self.driver.close()
@@ -116,7 +127,14 @@ class DefectCheck:
 check = DefectCheck()
 file, setup = check.getOpt(sys.argv[1:])
 if setup:
-    check.set_up()
-    check.teardown()
+    try:
+        check.set_up()
+        check.teardown()
+    except Exception:
+        check.teardown()
 else:
-    check.run(file)
+    try:
+        check.run(file)
+        check.teardown()
+    except Exception:
+        check.teardown()
