@@ -3,6 +3,7 @@ import getpass
 import os.path
 import sys
 import time
+from sys import platform
 
 import pandas as pd
 from selenium import webdriver
@@ -28,11 +29,15 @@ class DefectCheck:
 
     def set_up(self):
         chrome_options = Options()
-        # if not setup:
-        #     chrome_options.add_argument("--headless")
-        chrome_options.add_argument(
-            f"--user-data-dir=C:\\Users\\{getpass.getuser()}\\AppData\\Local\\Google\\Chrome\\User Data\\Default")
-        s = Service('chromedriver.exe')
+        if not setup:
+            chrome_options.add_argument("--headless")
+        chrome_options.add_argument('--no-sandbox')
+        if platform == "linux" or platform == "linux2":
+            chrome_options.add_argument(f"--user-data-dir=~/.config/google-chrome")
+            s = Service('chromedriver')
+        elif platform == "win32":
+            chrome_options.add_argument(f"--user-data-dir=C:\\Users\\{getpass.getuser()}\\AppData\\Local\\Google\\Chrome\\User Data\\Default")
+            s = Service('chromedriver.exe')
         chrome_options.add_argument("--profile-directory=Default")
         self.driver = webdriver.Chrome(service=s, options=chrome_options)
         if setup:
