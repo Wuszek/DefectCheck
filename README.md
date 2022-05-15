@@ -12,6 +12,22 @@ just clone repo and run:
 python3 main.py -i test.xlsx
 ```
 
+## Docker test run 
+I prepared Dockerfile to build image and run script inside prepared container. 
+
+Download Dockerfile and run below commands (in the same dir, as Dockerfile) to 
+build image and run it. Then use script as described below. 
+
+Disclaimer: For now, there is no option for authentication, if your JIRA instance needs one
+before scraping. Might be available in the future.
+
+```bash 
+docker build -t defectcheck .
+docker run -it defectcheck
+cd DefectCheck 
+python3 main.py -i test.xlsx
+```
+
 ## How does it work?
 ### Input:
 As input, we provide Excel file with results of automatic tests. Each row contains 
