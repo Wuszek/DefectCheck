@@ -34,10 +34,10 @@ class DefectCheck:
         chrome_options.add_argument('--no-sandbox')
         if platform == "linux" or platform == "linux2":
             chrome_options.add_argument(f"--user-data-dir=~/.config/google-chrome")
-            s = Service('chromedriver')
+            s = Service('drivers/chromedriver')
         elif platform == "win32":
             chrome_options.add_argument(f"--user-data-dir=C:\\Users\\{getpass.getuser()}\\AppData\\Local\\Google\\Chrome\\User Data\\Default")
-            s = Service('chromedriver.exe')
+            s = Service('drivers/chromedriver.exe')
         chrome_options.add_argument("--profile-directory=Default")
         self.driver = webdriver.Chrome(service=s, options=chrome_options)
         if setup:
