@@ -141,7 +141,7 @@ if setup:
         check.teardown()
     except Exception as e:
         print(f"ERROR \t: Exception occurred when trying to perform setup. "
-              f"Exception msg: {e}".expandtabs(5))
+              f"Exception msg: {e}".expandtabs(15))
         check.teardown()
 else:
     try:
@@ -149,5 +149,5 @@ else:
         check.teardown()
     except Exception as e:
         print(f"ERROR \t: Exception occurred when performing defect check. "
-              f"Exception msg: {e}".expandtabs(5))
+              f"Exception msg: {e}".expandtabs(15))
         check.teardown()
