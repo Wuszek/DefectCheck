@@ -5,6 +5,20 @@
 It is designed to prepare list of closed defects, connected to automatic tests. This tool 
 should help track defects, that should be detached from tests code, to keep it clean.
 
+## Requirements 
+
+Install requirements with:
+```bash
+python3 -m pip install -r requirements.txt
+```
+
+## Settings
+Edit line 19 to set up choosen jira. It should end with `/browse/`, e.g.:
+```bash
+WEBSITE = "jira.atlassian.com/browse/"
+```
+
+
 ## Test run 
 I prepared fake `test.xlsx` file filled with desired defect information, and made script work with public Atlassian JIRA. To test script,
 just clone repo and run:

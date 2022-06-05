@@ -20,7 +20,4 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
 # clone repo and setup chromedriver
 RUN git clone https://git.kobiela.click/wiktor.kobiela/DefectCheck && \
     cd DefectCheck && \
-	rm chromedriver.exe && \
-	mv chromedriver /usr/local/bin && \
-	chmod +x /usr/local/bin/chromedriver && \
 	pip3 install -r requirements.txt

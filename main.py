@@ -13,6 +13,7 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
+from webdriver_manager.chrome import ChromeDriverManager
 
 TIMEOUT = 5
 WEBSITE = "jira.atlassian.com/browse/"
@@ -34,11 +35,11 @@ class DefectCheck:
         chrome_options.add_argument('--no-sandbox')
         if platform == "linux" or platform == "linux2":
             chrome_options.add_argument(f"--user-data-dir=~/.config/google-chrome")
-            s = Service('drivers/chromedriver')
+            s = Service(ChromeDriverManager().install())
         elif platform == "win32":
             chrome_options.add_argument(f"--user-data-dir=C:\\Users\\{getpass.getuser()}\\"
                                         f"AppData\\Local\\Google\\Chrome\\User Data\\Default")
-            s = Service('drivers/chromedriver.exe')
+            s = Service(ChromeDriverManager().install())
         chrome_options.add_argument("--profile-directory=Default")
         self.driver = webdriver.Chrome(service=s, options=chrome_options)
         if setup:
@@ -70,7 +71,7 @@ class DefectCheck:
                 type_d = self.driver.find_element(By.XPATH, TYPE_VALUE).text  # look for type
                 self.driver.find_element(By.XPATH, ELEM_SEARCH_XPATH)  # look for status
                 title = self.driver.find_element(By.XPATH, DEFECT_NAME_XPATH).text  # grab title
-                closed_defect_info = "{0:55} | Type: {1:15} | Title: {2}".format(i, type_d, title)
+                closed_defect_info = "{0:46} | Type: {1:15} | Title: {2}".format(i, type_d, title)
                 new_list.append(closed_defect_info)
                 print(f"{link_list.index(i) + 1}/{len(link_list)} PASS \t: https://{i} ({type_d.upper()}) "
                       f"is CLOSED! TITLE: {title}".expandtabs(5))
